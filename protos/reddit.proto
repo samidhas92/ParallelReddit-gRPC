@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package reddit;
+
+// Define a User
+message User {
+  string id = 1; // Human readable user ID
+}
+
+enum PostState {
+  POST_NORMAL = 0;
+  POST_LOCKED = 1;
+  POST_HIDDEN = 2;
+}
+
+enum CommentState {
+  COMMENT_NORMAL = 0;
+  COMMENT_HIDDEN = 1;
+}
+
+// Define an enumeration for the visibility of a subreddit
+enum SubredditVisibility {
+  SUBREDDIT_PUBLIC = 0;
+  SUBREDDIT_PRIVATE = 1;
+  SUBREDDIT_HIDDEN = 2;
+}
+
+// Define the Subreddit message
+message Subreddit {
+  string name = 1; // Human-readable name
+  SubredditVisibility visibility = 2;
+  repeated string tags = 3; // Set of tags defined by the subreddit
+}
+
+// Define a Post
+message Post {
+  string title = 1;
+  string text = 2;
+  oneof media {
+    string video_url = 3;
+    string image_url = 4;
+  }
+  string author = 5; // Optional
+  int32 score = 6;
+  PostState state = 7;
+  string publication_date = 8;
+  string subreddit = 9; // Reference to the subreddit it belongs to
+  repeated string tags = 10; // Tags attached to the post
+  string id = 11;
+}
+
+
+// Define a Comment
+message Comment {
+  string author = 1;
+  string text = 2;
+  int32 score = 3;
+  CommentState state = 4;
+  string publication_date = 5;
+  oneof parent {
+    string post_id = 6;
+    string comment_id = 7;
+  }
+  string id = 8;
+}
+
+message VoteRequest {
+  string id = 1;
+  bool upvote = 2; // true for upvote, false for downvote
+}
+
+message VoteResponse {
+  int32 newScore = 1;
+  string id = 2;
+   
+}
+
+message PostRequest {
+  string id = 1;
+}
+
+message CommentsRequest {
+  string post_id = 1;
+  int32 limit = 2;
+}
+
+// Responses for comments retrieval
+message CommentWithReplies {
+  Comment comment = 1;
+  repeated Comment replies = 2;
+  bool has_more_replies = 3;
+}
+
+message CommentsResponse {
+  repeated CommentWithReplies comments = 1;
+}
+
+message ExpandRequest {
+  string comment_id = 1;
+  int32 limit = 2;
+}
+
+message MonitorRequest {
+  string post_id = 1;
+  repeated string comment_ids = 2;
+}
+
+message UpdateResponse {
+  string id = 1;
+  int32 newScore = 2;
+}
+
+service Reddit {
+  rpc CreatePost(Post) returns (Post);
+  rpc VotePost(VoteRequest) returns (VoteResponse);
+  rpc RetrievePost(PostRequest) returns (Post);
+  rpc CreateComment(Comment) returns (Comment);
+  rpc VoteComment(VoteRequest) returns (VoteResponse);
+  rpc RetrieveComments(CommentsRequest) returns (CommentsResponse);
+  rpc ExpandCommentBranch(ExpandRequest) returns (CommentsResponse);
+  rpc MonitorUpdates(MonitorRequest) returns (stream UpdateResponse);
+}
+
+
